@@ -3,39 +3,13 @@
     <h1>Welcome to FlaskTaskr</h1>
     <a href="/logout">Logout</a>
     <div class="add-task">
-        <h3>Add new task:</h3>
+        <h3>{{ username }}, Add new task:</h3>
         <table>
             <tr>
                 <form action="{{ url_for('new_task') }}" method="post">
                 {{ form.csrf_token }}
-                    <td>
-                        <label>Task Name:</label>
-                        <input name="name" type="text">
-                    </td>
-                    <td>
-                        <label>Due Date (mm/dd/yyyy):</label>
-                        <input name="due_date" type="text" width="120px">
-                    </td>
-                    <td>
-                        <label>Priority:</label>
-                        <select name="priority" width="100px">
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                            <option value="8">8</option>
-                            <option value="9">9</option>
-                            <option value="10">10</option>
-                        </select>
-                    </td>
-                    <td>
-                        &nbsp;
-                        &nbsp;
-                        <input class="button" type="submit" value="Save">
-                    </td>
+                    <p>{{ form.name.label }}: {{ form.name }}<br>{{ form.due_date.label }}: {{ form.due_date }}&nbsp;{{ form.priority.label }}: {{ form.priority }} </p>
+                    <p><input type="submit" value="Submit"></p>
                 </form>
             </tr>
         </table>
@@ -51,6 +25,7 @@
                         <th width="300px"><strong>Task Name</strong></th>
                         <th width="100px"><strong>Due Date</strong></th>
                         <th width="50px"><strong>Priority</strong></th>
+                        <th width="90px"><strong>Posted By</strong></th>
                         <th><strong>Actions</strong></th>
                     </tr>
                 </thead>
@@ -59,6 +34,7 @@
                         <td width="300px"><strong>{{ o.name }}</strong></td>
                         <td width="100px"><strong>{{ o.due_date }}</strong></td>
                         <td width="50px"><strong>{{ o.priority }}</strong></td>
+                        <td width="90px"><strong>{{ o.poster.name }}</strong></td>
                         <td>
                             <a href="{{ url_for('delete_entry', task_id = o.task_id) }}">Delete</a> -
                             <a href="{{ url_for('complete', task_id = o.task_id) }}">Mark as Complete</a>
@@ -79,6 +55,7 @@
                         <th width="300px"><strong>Task Name</strong></th>
                         <th width="100px"><strong>Due Date</strong></th>
                         <th width="50px"><strong>Priority</strong></th>
+                        <th width="90px"><strong>Posted By</strong></th>
                         <th><strong>Actions</strong></th>
                     </tr>
                 </thead>
@@ -87,6 +64,8 @@
                         <td width="300px"><strong>{{ c.name }}</strong></td>
                         <td width="100px"><strong>{{ c.due_date }}</strong></td>
                         <td width="50px"><strong>{{ c.priority }}</strong></td>
+                        <td width="90px"><strong>{{ c.poster.name }}</strong></td>
+
                         <td>
                             <a href="{{ url_for('delete_entry', task_id = c.task_id) }}">Delete</a> -
                             <a href="{{ url_for('complete', task_id = c.task_id) }}">Mark as Complete</a>
