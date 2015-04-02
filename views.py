@@ -66,6 +66,7 @@ def register():
         return render_template('register.html', form=form)
 
 @app.route('/logout/')
+@login_required
 def logout():
     session.pop('logged_in', None)
     session.pop('username', None)
