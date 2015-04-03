@@ -141,7 +141,7 @@ def new_task():
     return redirect(url_for('tasks'))
 
 # Mark tasks as complete:
-@app.route('/complete/<int:task_id>/',)
+@app.route('/complete/<int:task_id>/')
 @login_required
 def complete(task_id):
     new_id = task_id
@@ -151,7 +151,7 @@ def complete(task_id):
         db.session.commit()
         flash('The task was marked as complete. Nice.')
     else:
-        flash('You can only update tasks that belong to you')
+        flash('You can only update tasks that belong to you.')
     return redirect(url_for('tasks'))
 
 # Delete Tasks:
@@ -159,7 +159,11 @@ def complete(task_id):
 @login_required
 def delete_entry(task_id):
     new_id = task_id
-    db.session.query(Task).filter_by(task_id=new_id).delete()
-    db.session.commit()
-    flash('The task was deleted.')
+    task = db.session.query(Task).filter_by(task_id=new_id)
+    if task.first().user_id == session['user_id']:
+        task.delete()
+        db.session.commit()
+        flash('The task was deleted.')
+    else:
+        flash('You can only delete tasks that belong to you.')
     return redirect(url_for('tasks'))

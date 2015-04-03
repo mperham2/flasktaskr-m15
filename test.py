@@ -98,7 +98,7 @@ class AllTests(unittest.TestCase):
         response = self.register('Michael', 'mike@mike.com', 'python', 'python')
         assert 'Thanks for registering. Please login.' in response.data
 
-    def test_user_registration_error(self):
+    def test_duplicate_user_registration_throws_error(self):
         self.app.get('register/', follow_redirects=True)
         self.register('Michael', 'mike@mike.com', 'python', 'python')
         self.app.get('register/', follow_redirects=True)
@@ -108,6 +108,10 @@ class AllTests(unittest.TestCase):
                 'Oh no! That username and/or email already exist.',
                 response.data
                 )
+
+    def test_user_registraation_field_errors(self):
+        response = self.register('Michael', 'michael@realpython.com', 'python', '')
+        self.assertIn('This field is required.', response.data)
 
     def test_logged_in_users_can_logout(self):
         self.register('Fletcher', 'fletcher@realpython.com', 'python101', 'python101')
@@ -125,7 +129,7 @@ class AllTests(unittest.TestCase):
         self.login('Fletcher', 'python101')
         response = self.app.get("tasks/")
         self.assertEquals(response.status_code, 200)
-        self.assertIn('Add new task:', response.data)
+        self.assertIn('Add a new task:', response.data)
 
     def test_not_logged_in_users_cannot_access_tasks_page(self):
         response = self.app.get('tasks/', follow_redirects=True)
