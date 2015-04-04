@@ -71,6 +71,7 @@ def logout():
     session.pop('logged_in', None)
     session.pop('username', None)
     session.pop('user_id', None)
+    session.pop('role', None)
     flash('You are logged out. Goodbye.')
     return redirect(url_for('login'))
 
@@ -84,19 +85,20 @@ def login():
                 name=request.form['name'],
                 password=request.form['password']
                 ).first()
-            if u is None:
+            if u is not None and u.password == request.form['password']:
+                session['logged_in'] = True
+                session['username'] = u.name
+                session['user_id'] = u.id
+                session['role'] = u.role
+                flash('You are logged in. Go crazy.')
+                return redirect(url_for('tasks'))
+            else:
                 error = 'Invalid username or password.'
                 return render_template(
                         "login.html",
                         form=form,
                         error=error
                     )
-            else:
-                session['logged_in'] = True
-                session['username'] = u.name
-                session['user_id'] = u.id
-                flash('You are logged in. Go crazy.')
-                return redirect(url_for('tasks'))
         else:
             return render_template(
                     "login.html",
@@ -146,7 +148,7 @@ def new_task():
 def complete(task_id):
     new_id = task_id
     task = db.session.query(Task).filter_by(task_id=new_id)
-    if task.first().user_id == session['user_id']:
+    if task.first().user_id == session['user_id'] or session['role'] == "admin":
         task.update({"status":"0"})
         db.session.commit()
         flash('The task was marked as complete. Nice.')
@@ -160,7 +162,7 @@ def complete(task_id):
 def delete_entry(task_id):
     new_id = task_id
     task = db.session.query(Task).filter_by(task_id=new_id)
-    if task.first().user_id == session['user_id']:
+    if task.first().user_id == session['user_id'] or session['role'] == "admin":
         task.delete()
         db.session.commit()
         flash('The task was deleted.')

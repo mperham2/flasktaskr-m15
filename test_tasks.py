@@ -46,6 +46,11 @@ class AllTests(unittest.TestCase):
         db.session.add(new_user)
         db.session.commit()
 
+    def create_admin_user(self):
+        new_user = User(name='Superman', email='admin@realpython.com', password='allpowerful', role='admin')
+        db.session.add(new_user)
+        db.session.commit()
+
     def new_user1_login(self):
         self.create_user('Michael', 'mike@mike.com', 'python')
         self.login('Michael', 'python')
@@ -120,6 +125,26 @@ class AllTests(unittest.TestCase):
             'The task was marked as complete. Nice.', response.data
         )
         self.assertIn('You can only delete tasks that belong to you.', response.data)
+
+    def test_admin_uesrs_can_complete_tasks_that_are_not_created_by_them(self):
+        self.new_user1_login()
+        self.goto_and_make_task()
+        self.logout()
+        self.create_admin_user()
+        self.login('Superman', 'allpowerful')
+        self.app.get('tasks/', follow_redirects=True)
+        response = self.app.get("complete/1/", follow_redirects=True)
+        self.assertNotIn('You can only update tasks that belong to you.', response.data)
+
+    def test_admin_uesrs_can_delete_tasks_that_are_not_created_by_them(self):
+        self.new_user1_login()
+        self.goto_and_make_task()
+        self.logout()
+        self.create_admin_user()
+        self.login('Superman', 'allpowerful')
+        self.app.get('tasks/', follow_redirects=True)
+        response = self.app.get("delete/1/", follow_redirects=True)
+        self.assertNotIn('You can only delete tasks that belong to you.', response.data)
 
 if __name__ == "__main__":
     unittest.main()

@@ -38,7 +38,7 @@ class User(db.Model):
     tasks = db.relationship('Task', backref='poster')
     role = db.Column(db.String, default='user')
 
-    def __init__(self, name=None, email=None, password=None):
+    def __init__(self, name=None, email=None, password=None, role=None):
         self.name = name
         self.email = email
         self.password = password
