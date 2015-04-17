@@ -21,8 +21,11 @@ class AllTests(unittest.TestCase):
         app.config['WTF_CSRF_ENABLED'] = False
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + \
             os.path.join(basedir, TEST_DB)
+        app.config['DEBUG'] = False
         self.app = app.test_client()
         db.create_all()
+
+        self.assertEquals(app.debug, False)
 
     # executed after each test
     def tearDown(self):
@@ -40,6 +43,12 @@ class AllTests(unittest.TestCase):
                              name=name, email=email,
                              password=password,
                              confirm=confirm), follow_redirects=True)
+
+
+    def create_user(self, name, email, password):
+        new_user = User(name=name, email=email, password=bcrypt.generate_password_hash(password))
+        db.session.add(new_user)
+        db.session.commit()
 
     # each test should start with 'test'
     def test_user_setup(self):
@@ -109,10 +118,6 @@ class AllTests(unittest.TestCase):
         response = self.logout()
         self.assertNotIn('You are logged out. Goodbye.', response.data)
 
-    def create_user(self, name, email, password):
-        new_user = User(name=name, email=email, password=password)
-        db.session.add(new_user)
-        db.session.commit()
 
     def test_default_user_role(self):
         db.session.add(User("Johnny", "john@doe.com", "johnny"))
