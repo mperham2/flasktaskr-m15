@@ -95,7 +95,7 @@ def complete(task_id):
     if session['user_id'] == task.first().user_id or session['role'] == "admin":
         task.update({"status": "0"})
         db.session.commit()
-        flash('TThe task was marked as complete. Nice.')
+        flash('The task was marked as complete. Nice.')
         return redirect(url_for('tasks.tasks'))
     else:
         flash('You can only update tasks that belong to you.')

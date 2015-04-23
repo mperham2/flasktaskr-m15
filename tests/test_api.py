@@ -61,6 +61,14 @@ class APITests(unittest.TestCase):
             )
         db.session.commit()
 
+    def task_dict(self):
+        return dict(name = "Purchase Real Python",
+        due_date = date(2016, 2, 23),
+        priority = 10,
+        posted_date = date(2016, 2, 7),
+        status = 1,
+        user_id = 1)
+
     ####################
     ### tests ##########
     ####################
@@ -87,6 +95,16 @@ class APITests(unittest.TestCase):
         self.assertEquals(response.status_code, 404)
         self.assertEquals(response.mimetype, 'application/json')
         self.assertIn('Element does not exist', response.data)
+
+    def test_process_aborts_if_task_doesnt_exist_when_adding(self):
+        d = self.task_dict()
+        response = self.app.put('/api/v1/tasks/209', data=d)
+        self.assertEquals(response.status_code, 404)
+        self.assertEquals(response.mimetype, 'application/json')
+        self.assertIn('Element does not exist', response.data)
+
+    # def test_users_can_post_to_resource_endpoint(self):
+    #     response = self.app.post
 
     if __name__ == "__main__":
         unittest.main()
