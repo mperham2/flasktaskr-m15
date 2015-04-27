@@ -62,13 +62,21 @@ class APITests(unittest.TestCase):
         db.session.commit()
 
     def task_dict(self):
-        return dict(name = "Purchase Real Python",
+        return dict(name = "Purchase Real Python Again",
         due_date = date(2016, 2, 23),
         priority = 10,
         posted_date = date(2016, 2, 7),
         status = 1,
-        user_id = 1)
+        user_id = 1,
+        task_id = 1)
 
+    def bad_task_dict(self):
+        return dict(
+        due_date = date(2016, 2, 23),
+        priority = 10,
+        posted_date = date(2016, 2, 7),
+        status = "qqqq",
+        user_id = 1)
     ####################
     ### tests ##########
     ####################
@@ -103,8 +111,33 @@ class APITests(unittest.TestCase):
         self.assertEquals(response.mimetype, 'application/json')
         self.assertIn('Element does not exist', response.data)
 
-    # def test_users_can_post_to_resource_endpoint(self):
-    #     response = self.app.post
+    def test_can_update_tasks_via_api_put(self):
+        self.add_tasks()
+        d = self.task_dict()
+        response = self.app.put('/api/v1/tasks/1', data=d, follow_redirects=True)
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.mimetype, 'application/json')
+        self.assertIn('Purchase Real Python Again', response.data)
+
+    def test_can_post_tasks_via_api_post(self):
+        d = dict(name = "Purchase Real Python Again",
+        due_date = date(2016, 2, 23),
+        priority = 10,
+        posted_date = date(2016, 2, 7),
+        status = 1,
+        user_id = 1)
+        response = self.app.post('/api/v1/tasks', data=d, follow_redirects=True)
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.mimetype, 'application/json')
+        self.assertIn('Purchase Real Python Again', response.data)
+
+    def test_can_delete_tasks_via_api_delete(self):
+        self.add_tasks()
+        response = self.app.delete('/api/v1/tasks/1', follow_redirects=True)
+        self.assertIn('task id 1 deleted', response.data)
+        response = self.app.get('/api/v1/tasks/1', follow_redirects=True)
+        self.assertEquals(response.status_code, 404)
+        self.assertIn('Element does not exist', response.data)
 
     if __name__ == "__main__":
         unittest.main()

@@ -219,6 +219,25 @@ class AllTests(unittest.TestCase):
         self.assertIn(b'complete/2/', response.data)
         self.assertIn(b'delete/2/', response.data)
 
+    def test_users_can_mark_complete_tasks_incomplete(self):
+        self.register('Michael', 'michael@realpython.com', 'python', 'python')
+        self.login('Michael', 'python')
+        self.app.get('tasks/', follow_redirects=True)
+        self.create_task()
+        response = self.app.get("complete/1/", follow_redirects=True)
+        self.assertIn(b'incomplete/1/', response.data)
+
+    def test_marking_complete_tasks_incomplete_puts_them_back_open(self):
+        self.register('Michael', 'michael@realpython.com', 'python', 'python')
+        self.login('Michael', 'python')
+        self.app.get('tasks/', follow_redirects=True)
+        self.create_task()
+        self.app.get("complete/1/", follow_redirects=True)
+        response = self.app.get("incomplete/1/", follow_redirects=True)
+        self.assertIn(b'complete/1/', response.data)
+
+
+
 if __name__ == "__main__":
     unittest.main()
 

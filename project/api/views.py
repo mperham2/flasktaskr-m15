@@ -1,7 +1,8 @@
 # project/api/views.py
 
 from functools import wraps
-from flask import flash, redirect, jsonify, session, url_for, Blueprint, make_response, abort
+from datetime import date, datetime
+from flask import flash, redirect, jsonify, session, url_for, Blueprint, make_response, abort, request
 from flask.ext.restful import reqparse, abort, Resource, Api
 from project import app, db
 from project.models import Task
@@ -12,18 +13,6 @@ from project.models import Task
 
 api_blueprint = Blueprint('api', __name__)
 api = Api(api_blueprint)
-
-
-###########################
-##### reqparse formats ####
-###########################
-
-# parser = reqparse.RequestParser()
-# parser.add_argument('task_id', type=int)
-# parser.add_argument('name', type=str)
-# parser.add_argument('due_date', type=str)
-# parser.add_argument('priority', type=int)
-# parser.add_argument('status', type=int)
 
 #######################
 ### helper functions ###
@@ -39,24 +28,6 @@ api = Api(api_blueprint)
 #             return redirect(url_for('users.login'))
 #     return wrap
 
-# def open_tasks():
-#     return db.session.query(Task).filter_by(status='1').order_by(Task.due_date.asc())
-
-# def closed_tasks():
-#     return db.session.query(Task).filter_by(status='0').order_by(Task.due_date.asc())
-
-# def abort_if_task_doesnt_exist(task_id):
-#     result = db.session.query(Task).filter_by(task_id=task_id).first()
-#     if not result:
-#         abort(404, message="Element does not exist")
-
-def abort_if_doesnt_exist(task_id):
-    result = db.session.query(Task).filter_by(task_id=task_id).first()
-    if result:
-        return result
-    else:
-        abort(404, message="Element does not exist")
-
 #######################
 ### routes ###
 #######################
@@ -64,11 +35,12 @@ def abort_if_doesnt_exist(task_id):
 class TaskListAPI(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
-        self.reqparse.add_argument('task_id', type=int, location = 'json')
-        self.reqparse.add_argument('name', type=str, location = 'json')
-        self.reqparse.add_argument('due_date', location = 'json')
-        self.reqparse.add_argument('priority', type=int, location = 'json')
-        self.reqparse.add_argument('status', type=int, location = 'json')
+        self.reqparse.add_argument('task_id', type=int, help="that's some bullshit")
+        self.reqparse.add_argument('name', type=str, required=True,
+help="Name cannot be blank!")
+        self.reqparse.add_argument('due_date', type=str)
+        self.reqparse.add_argument('priority', type=int)
+        self.reqparse.add_argument('status', type=int, help="that's some bullshit")
         super(TaskListAPI, self).__init__()
 
     def get(self):
@@ -85,39 +57,38 @@ class TaskListAPI(Resource):
                 'user id': result.user_id
                 }
             json_results.append(data)
+
         return jsonify(items=json_results)
 
     def post(self):
-        error = None
-        args = parser.parse_args()
+        args = self.reqparse.parse_args()
+        app.logger.debug(args)
+        result = args
         new_task = Task(
             args['name'],
-            args['due_date'],
+            datetime.strptime(args['due_date'], "%Y-%m-%d"),
             args['priority'],
-            datetime.datetime.utcnow(),
+            datetime.utcnow(),
             args['status'],
-            args['user_id']
+            '1'
         )
         db.session.add(new_task)
         db.session.commit()
-        # code = 200
-        # else:
-        #     result = {"error": error}
-        #     code = 404
+        code = 200
         return make_response(jsonify(result), code)
 
 class TaskAPI(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
-        self.reqparse.add_argument('task_id', type=int, location = 'json')
-        self.reqparse.add_argument('name', type=str, location = 'json')
-        self.reqparse.add_argument('due_date', location = 'json')
-        self.reqparse.add_argument('priority', type=int, location = 'json')
-        self.reqparse.add_argument('status', type=int, location = 'json')
+        self.reqparse.add_argument('task_id', type=int)
+        self.reqparse.add_argument('name', type=str)
+        self.reqparse.add_argument('due_date', type=str)
+        self.reqparse.add_argument('priority', type=str)
+        self.reqparse.add_argument('status', type=int, help="that's some bullshit")
         super(TaskAPI, self).__init__()
 
     def get(self, task_id):
-        result = abort_if_doesnt_exist(task_id)
+        result = db.session.query(Task).filter_by(task_id=task_id).first()
         if result:
             result = {
                 'task_id': result.task_id,
@@ -135,11 +106,11 @@ class TaskAPI(Resource):
         return make_response(jsonify(result), code)
 
     def delete(self, task_id):
-        result = abort_if_doesnt_exist(task_id)
-        if result:
-            task = db.session.query(Task).filter_by(task_id=task_id).first()
+        task = db.session.query(Task).filter_by(task_id=task_id)
+        if task.first():
             task.delete()
             db.session.commit()
+            result = {"result": "task id {} deleted".format(task_id)}
             code = 200
         else:
             result = {"error": "Element does not exist"}
@@ -147,15 +118,27 @@ class TaskAPI(Resource):
         return make_response(jsonify(result), code)
 
     def put(self, task_id):
-        result = abort_if_doesnt_exist(task_id)
-        if result:
-            task = db.session.query(Task).filter_by(task_id=task_id).first()
-            if len(task) == 0:
-                abort(404)
-            args = parser.parse_args()
+        new_id = task_id
+        result = db.session.query(Task).filter_by(task_id=new_id)
+        if result.first():
+            args = self.reqparse.parse_args()
+            app.logger.debug("the parsed args are: ")
+            app.logger.debug(args)
             for key, value in args.iteritems():
-                task.update({key: value})
+                if key == 'due_date':
+                    value = datetime.strptime(value, "%Y-%m-%d")
+                result.update({key: value})
             db.session.commit()
+            task = result.first()
+            result = {
+                'task_id': task.task_id,
+                'task name': task.name,
+                'due date': str(task.due_date),
+                'priority': task.priority,
+                'posted date': str(task.posted_date),
+                'status': task.status,
+                'user id': task.user_id
+            }
             code = 200
         else:
             result = {"error": "Element does not exist"}

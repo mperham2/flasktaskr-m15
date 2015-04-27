@@ -103,7 +103,8 @@
           <td width="90px">{{ task.poster.name }}</td>
           <td>
              {% if task.poster.name == session.name or session.role == "admin" %}
-              <a href="{{ url_for('tasks.delete_entry', task_id = task.task_id) }}">Delete</a>
+              <a href="{{ url_for('tasks.delete_entry', task_id = task.task_id) }}">Delete</a> -
+              <a href="{{ url_for('tasks.incomplete', task_id = task.task_id) }}">Mark as Incomplete</a>
             {% else %}
               <span>N/A</span>
             {% endif %}
